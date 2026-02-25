@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Schiettent v2.0: Actief Rapporteren</title>
+    <title>Schiettent v2.0: De 30-Zinnen Missie</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -11,32 +11,27 @@
         
         #game-container { width: 100vw; height: 100vh; position: relative; }
         
-        /* Sniper HUD */
         #hud { position: fixed; top: 0; width: 100%; padding: 20px; display: flex; justify-content: space-around; background: rgba(0,0,0,0.8); z-index: 100; border-bottom: 2px solid var(--pol); }
         .stat-box { text-align: center; }
         .stat-val { display: block; font-size: 1.5em; font-weight: bold; color: var(--gold); }
 
-        /* Vliegende doelwitten */
         .target { 
             position: absolute; padding: 15px 25px; background: #1e293b; border: 2px solid var(--pol);
             border-radius: 8px; font-weight: bold; white-space: nowrap; cursor: crosshair;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5); transition: transform 0.1s;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
         }
         .v-deelwoord { color: var(--danger); text-decoration: underline; padding: 0 4px; }
         .v-deelwoord:hover { background: var(--danger); color: white; border-radius: 3px; }
 
-        /* Hertekst Paneel */
         #input-overlay {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: #1e293b; padding: 40px; border: 4px solid var(--pol); border-radius: 20px;
             z-index: 200; width: 600px; text-align: center; box-shadow: 0 0 100px rgba(0,0,0,0.9);
         }
-        #active-input { width: 100%; padding: 15px; font-size: 1.2em; margin-top: 20px; background: #0f172a; color: white; border: 1px solid var(--gold); }
+        #active-input { width: 100%; padding: 15px; font-size: 1.2em; margin-top: 20px; background: #0f172a; color: white; border: 1px solid var(--gold); text-align: center; }
 
-        /* Leaderboard & Docent Tool */
-        .leaderboard { position: fixed; bottom: 20px; left: 20px; background: rgba(30,41,59,0.7); padding: 20px; border-radius: 10px; width: 250px; }
+        .leaderboard { position: fixed; bottom: 20px; left: 20px; background: rgba(30,41,59,0.7); padding: 20px; border-radius: 10px; width: 250px; font-size: 0.8em; }
         .admin-btn { position: fixed; bottom: 10px; right: 10px; opacity: 0.3; cursor: pointer; background: none; border: 1px solid white; color: white; padding: 5px; font-size: 0.6em; }
-        .admin-btn:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -50,17 +45,17 @@
 <div id="game-container">
     <div id="start-screen" style="position:absolute; top:40%; left:50%; transform:translate(-50%, -50%); text-align:center;">
         <h1>RECHERCHE SCHIETTENT v2.0</h1>
-        <p>Elimineer de passieve vorm. Schrijf actief.</p>
-        <input type="text" id="speler-naam" placeholder="Naam / Dienstnummer" style="padding:15px; width:300px;"><br><br>
-        <button onclick="startGame()" style="padding:15px 50px; background:var(--pol); color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">START SESSIE</button>
+        <p>Elimineer de passieve vorm. Schrijf actief in de IK-vorm.</p>
+        <input type="text" id="speler-naam" placeholder="Je voornaam..." style="padding:15px; width:300px; text-align: center; border-radius: 5px; border: none;"><br><br>
+        <button onclick="startGame()" style="padding:15px 50px; background:var(--pol); color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">START TRAINING</button>
     </div>
 </div>
 
 <div id="input-overlay">
     <h3 style="color:var(--gold)">Herschrijf naar ACTIEF</h3>
-    <p id="original-sentence" style="font-style:italic;"></p>
-    <input type="text" id="active-input" placeholder="Typ de actieve ik-vorm...">
-    <p style="font-size: 0.8em; margin-top: 15px; color: #94a3b8;">Voorbeeld: "Ik pakte de verdachte beet."</p>
+    <p id="original-sentence" style="font-style:italic; color: #cbd5e1;"></p>
+    <input type="text" id="active-input" placeholder="Typ je zin in de ik-vorm..." autocomplete="off">
+    <p style="font-size: 0.75em; margin-top: 15px; color: #94a3b8;">Focus op de ik-vorm in de verleden tijd.</p>
 </div>
 
 <div class="leaderboard">
@@ -71,7 +66,6 @@
 <button class="admin-btn" onclick="exportScores()">EXPORT DATA (CSV)</button>
 
 <script>
-    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyBOo2LzR1IBnsiBR2SCwPJABtaRv0tpKQ4",
         authDomain: "speeltuin-recherche.firebaseapp.com",
@@ -82,23 +76,44 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Uitgebreide zinnenlijst (Pittig & Actueel)
     const casussen = [
-        {pas: "De verdachte werd door mij <span class='v-deelwoord'>geboeid</span>.", corr: "ik boeide de verdachte"},
+        {pas: "De verdachte werd door mij <span class='v-deelwoord'>gezien</span>.", corr: "ik zag de verdachte"},
+        {pas: "Het signalement werd door mij <span class='v-deelwoord'>genoteerd</span>.", corr: "ik noteerde het signalement"},
+        {pas: "Er werd door de melder overlast <span class='v-deelwoord'>ervaren</span>.", corr: "de melder ervaarde overlast"},
+        {pas: "De locatie werd door de surveillance <span class='v-deelwoord'>bereikt</span>.", corr: "ik bereikte de locatie"},
+        {pas: "Het voertuig werd door mij in de gaten <span class='v-deelwoord'>gehouden</span>.", corr: "ik hield het voertuig in de gaten"},
+        {pas: "De camerabeelden werden door de recherche <span class='v-deelwoord'>uitgekeken</span>.", corr: "ik keek de camerabeelden uit"},
+        {pas: "Een verdachte situatie werd door mij <span class='v-deelwoord'>waargenomen</span>.", corr: "ik nam een verdachte situatie waar"},
+        {pas: "De getuige werd door mij apart <span class='v-deelwoord'>genomen</span>.", corr: "ik nam de getuige apart"},
+        {pas: "Het vluchtpad werd door mij <span class='v-deelwoord'>vastgesteld</span>.", corr: "ik stelde het vluchtpad vast"},
+        {pas: "Er werd door mij op de omgeving <span class='v-deelwoord'>gelet</span>.", corr: "ik lette op de omgeving"},
+        {pas: "Het ID-bewijs werd door mij <span class='v-deelwoord'>gecontroleerd</span>.", corr: "ik controleerde het id-bewijs"},
+        {pas: "De binnenzak werd door de agent <span class='v-deelwoord'>gevoeld</span>.", corr: "ik voelde in de binnenzak"},
+        {pas: "Het mes werd in de mouw <span class='v-deelwoord'>aangetroffen</span>.", corr: "ik trof het mes aan"},
+        {pas: "De verklaring werd door mij op papier <span class='v-deelwoord'>gezet</span>.", corr: "ik zette de verklaring op papier"},
+        {pas: "Het voertuig werd door de bijrijder <span class='v-deelwoord'>doorzocht</span>.", corr: "ik doorzocht het voertuig"},
+        {pas: "De braakschade werd door de recherche <span class='v-deelwoord'>onderzocht</span>.", corr: "ik onderzocht de braakschade"},
+        {pas: "Er werd door mij om een ID-bewijs <span class='v-deelwoord'>gevraagd</span>.", corr: "ik vroeg om een id-bewijs"},
+        {pas: "De drugs werden door mij in beslag <span class='v-deelwoord'>genomen</span>.", corr: "ik nam de drugs in beslag"},
+        {pas: "Het proces-verbaal werd door mij <span class='v-deelwoord'>opgemaakt</span>.", corr: "ik maakte het proces-verbaal op"},
+        {pas: "De bekeuring werd door de verbalisant <span class='v-deelwoord'>uitgereikt</span>.", corr: "ik reikte de bekeuring uit"},
+        {pas: "De verdachte werd door mij <span class='v-deelwoord'>aangehouden</span>.", corr: "ik hield de verdachte aan"},
+        {pas: "De verdachte werd door de agent <span class='v-deelwoord'>geboeid</span>.", corr: "ik boeide de verdachte"},
         {pas: "Er werd door mij pepperspray <span class='v-deelwoord'>gebruikt</span>.", corr: "ik gebruikte pepperspray"},
         {pas: "De verdachte werd tegen de grond <span class='v-deelwoord'>gewerkt</span>.", corr: "ik werkte de verdachte tegen de grond"},
-        {pas: "Het voertuig werd door mij tot stilstand <span class='v-deelwoord'>gebracht</span>.", corr: "ik bracht het voertuig tot stilstand"},
-        {pas: "De tas werd ter inbeslagname <span class='v-deelwoord'>overgenomen</span>.", corr: "ik nam de tas in beslag"},
-        {pas: "Het mes werd in de binnenzak <span class='v-deelwoord'>aangetroffen</span>.", corr: "ik trof het mes aan in de binnenzak"},
-        {pas: "De verdachte werd door mij tot medewerking <span class='v-deelwoord'>gesommeerd</span>.", corr: "ik sommeerde de verdachte om mee te werken"},
-        {pas: "De ruit werd door de verdachte <span class='v-deelwoord'>vernield</span>.", corr: "ik zag dat de verdachte de ruit vernielde"}
+        {pas: "De vluchtende man werd door mij <span class='v-deelwoord'>getackeld</span>.", corr: "ik tackelde de vluchtende man"},
+        {pas: "De diensthond werd door de geleider <span class='v-deelwoord'>ingezet</span>.", corr: "ik zette de diensthond in"},
+        {pas: "De verdachte werd in de boeien <span class='v-deelwoord'>geslagen</span>.", corr: "ik sloeg de verdachte in de boeien"},
+        {pas: "Er werd door mij een waarschuwingsschot <span class='v-deelwoord'>gelost</span>.", corr: "ik loste een waarschuwingsschot"},
+        {pas: "De verdachte werd naar het bureau <span class='v-deelwoord'>overgebracht</span>.", corr: "ik bracht de verdachte over"},
+        {pas: "De weerstand werd door mij met geweld <span class='v-deelwoord'>gebroken</span>.", corr: "ik brak de weerstand"}
     ];
 
-    let score = 0, timeLeft = 60, gameActive = false, speedMult = 1;
+    let score = 0, timeLeft = 60, gameActive = false;
 
     function startGame() {
-        const n = document.getElementById('speler-naam').value;
-        if(!n) return;
+        const n = document.getElementById('speler-naam').value.trim();
+        if(!n) return alert("Agent, voer je voornaam in.");
         document.getElementById('display-naam').innerText = n;
         document.getElementById('start-screen').style.display = "none";
         gameActive = true;
@@ -119,16 +134,15 @@
         div.className = 'target';
         div.innerHTML = opgave.pas;
         div.style.top = (Math.random() * 60 + 20) + "%";
-        div.style.left = "-600px";
+        div.style.left = "-800px";
         document.getElementById('game-container').appendChild(div);
 
-        let pos = -600;
-        // Snelheid verhoogt op basis van score
-        let currentSpeed = (3 + (score / 20)) * speedMult; 
+        let pos = -800;
+        let speed = 2.5 + (score / 40); 
 
         const move = setInterval(() => {
             if(!gameActive) { clearInterval(move); div.remove(); return; }
-            pos += currentSpeed;
+            pos += speed;
             div.style.left = pos + "px";
             if(pos > window.innerWidth) { clearInterval(move); div.remove(); spawn(); }
         }, 20);
@@ -142,21 +156,22 @@
     function showInput(opgave, div) {
         document.getElementById('original-sentence').innerText = div.innerText;
         document.getElementById('input-overlay').style.display = "block";
-        document.getElementById('active-input').value = "";
-        document.getElementById('active-input').focus();
+        const input = document.getElementById('active-input');
+        input.value = "";
+        input.focus();
         
-        document.getElementById('active-input').onkeypress = (e) => {
+        input.onkeypress = (e) => {
             if(e.key === 'Enter') {
-                const gok = document.getElementById('active-input').value.toLowerCase().trim();
-                // Check of de kern van de actieve zin erin zit
-                if(gok.includes(opgave.corr.split(' ')[1]) && gok.includes("ik")) {
+                const gok = input.value.toLowerCase().trim();
+                const targetVerb = opgave.corr.split(' ')[1]; 
+                if(gok.includes("ik") && gok.includes(targetVerb.substring(0, 4))) {
                     score += 10;
                     document.getElementById('score').innerText = score;
                     document.getElementById('input-overlay').style.display = "none";
                     div.remove();
                     spawn();
                 } else {
-                    alert("Onvoldoende! Dat is niet de actieve ik-vorm.");
+                    alert("FOUT! Schrijf in de actieve ik-vorm.");
                 }
             }
         };
@@ -165,12 +180,11 @@
     function endGame() {
         gameActive = false;
         const naam = document.getElementById('display-naam').innerText;
-        db.ref('leaderboard_v2').push({ naam, score, datum: new Date().toLocaleDateString() });
-        alert("FINISH! Je score: " + score);
+        db.ref('leaderboard_v2').push({ naam, score, datum: new Date().toLocaleString() });
+        alert("Training voltooid, " + naam + "! Jouw score: " + score);
         location.reload();
     }
 
-    // Leaderboard v2
     db.ref('leaderboard_v2').orderByChild('score').limitToLast(5).on('value', snap => {
         const list = document.getElementById('leader-list');
         list.innerHTML = "";
@@ -181,10 +195,9 @@
         });
     });
 
-    // DOCENT TOOL: Export naar CSV
     function exportScores() {
         db.ref('leaderboard_v2').once('value', snap => {
-            let csv = "Naam,Score,Datum\n";
+            let csv = "Voornaam,Score,Datum\n";
             snap.forEach(s => {
                 const d = s.val();
                 csv += `${d.naam},${d.score},${d.datum}\n`;
@@ -192,12 +205,9 @@
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.setAttribute('hidden', '');
             a.setAttribute('href', url);
-            a.setAttribute('download', 'resultaten_taal_schiettent.csv');
-            document.body.appendChild(a);
+            a.setAttribute('download', 'resultaten_schiettent.csv');
             a.click();
-            document.body.removeChild(a);
         });
     }
 </script>
