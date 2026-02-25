@@ -2,67 +2,76 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Recherche Schiettent: Code Actief</title>
+    <title>Schiettent v2.0: Actief Rapporteren</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --pol: #1d4e89; --bg: #020617; --gold: #ffd700; --danger: #ef4444; }
-        body { font-family: 'Courier New', Courier, monospace; background: var(--bg); color: white; margin: 0; overflow: hidden; }
+        :root { --pol: #1e3a8a; --bg: #020617; --gold: #fbbf24; --danger: #dc2626; --success: #16a34a; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; overflow: hidden; }
         
-        #game-container { position: relative; width: 100vw; height: 100vh; cursor: crosshair; }
+        #game-container { width: 100vw; height: 100vh; position: relative; }
         
-        /* De vliegende zinnen */
-        .target-sentence {
-            position: absolute; white-space: nowrap; font-size: 1.5em; font-weight: bold;
-            background: rgba(30, 41, 59, 0.8); padding: 10px 20px; border-radius: 5px;
-            border: 1px solid var(--pol); user-select: none;
-        }
-        .v-deelwoord { color: var(--danger); cursor: pointer; padding: 0 5px; border: 1px dashed transparent; }
-        .v-deelwoord:hover { border-color: var(--gold); background: rgba(255, 215, 0, 0.2); }
+        /* Sniper HUD */
+        #hud { position: fixed; top: 0; width: 100%; padding: 20px; display: flex; justify-content: space-around; background: rgba(0,0,0,0.8); z-index: 100; border-bottom: 2px solid var(--pol); }
+        .stat-box { text-align: center; }
+        .stat-val { display: block; font-size: 1.5em; font-weight: bold; color: var(--gold); }
 
-        /* Fase 2: Hertekst */
+        /* Vliegende doelwitten */
+        .target { 
+            position: absolute; padding: 15px 25px; background: #1e293b; border: 2px solid var(--pol);
+            border-radius: 8px; font-weight: bold; white-space: nowrap; cursor: crosshair;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); transition: transform 0.1s;
+        }
+        .v-deelwoord { color: var(--danger); text-decoration: underline; padding: 0 4px; }
+        .v-deelwoord:hover { background: var(--danger); color: white; border-radius: 3px; }
+
+        /* Hertekst Paneel */
         #input-overlay {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--pol); padding: 30px; border: 4px solid var(--gold); border-radius: 15px;
-            z-index: 100; width: 500px; text-align: center;
+            background: #1e293b; padding: 40px; border: 4px solid var(--pol); border-radius: 20px;
+            z-index: 200; width: 600px; text-align: center; box-shadow: 0 0 100px rgba(0,0,0,0.9);
         }
-        input { width: 100%; padding: 15px; font-size: 1.2em; margin: 15px 0; border: none; border-radius: 5px; }
+        #active-input { width: 100%; padding: 15px; font-size: 1.2em; margin-top: 20px; background: #0f172a; color: white; border: 1px solid var(--gold); }
 
-        /* UI Elementen */
-        #hud { position: fixed; top: 0; width: 100%; padding: 20px; display: flex; justify-content: space-between; font-size: 1.5em; z-index: 50; background: rgba(0,0,0,0.5); }
-        .leaderboard { position: fixed; bottom: 20px; right: 20px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; }
+        /* Leaderboard & Docent Tool */
+        .leaderboard { position: fixed; bottom: 20px; left: 20px; background: rgba(30,41,59,0.7); padding: 20px; border-radius: 10px; width: 250px; }
+        .admin-btn { position: fixed; bottom: 10px; right: 10px; opacity: 0.3; cursor: pointer; background: none; border: 1px solid white; color: white; padding: 5px; font-size: 0.6em; }
+        .admin-btn:hover { opacity: 1; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div>Agent: <span id="display-naam">...</span></div>
-    <div>TIJD: <span id="timer">60</span>s</div>
-    <div>SCORE: <span id="score">0</span></div>
+    <div class="stat-box">AGENT<span id="display-naam" class="stat-val">...</span></div>
+    <div class="stat-box">TIJD<span id="timer" class="stat-val">60</span></div>
+    <div class="stat-box">SCORE<span id="score" class="stat-val">0</span></div>
 </div>
 
 <div id="game-container">
-    <div id="start-screen" style="text-align: center; margin-top: 20vh;">
-        <h1>RECHERCHE SCHIETTENT</h1>
-        <p>Schiet op het voltooid deelwoord en schrijf de zin daarna actief.</p>
-        <input type="text" id="speler-naam" placeholder="Achternaam..." style="width: 250px;"><br>
-        <button onclick="startGame()" style="padding: 15px 40px; font-weight: bold; cursor: pointer;">START MISSIE</button>
+    <div id="start-screen" style="position:absolute; top:40%; left:50%; transform:translate(-50%, -50%); text-align:center;">
+        <h1>RECHERCHE SCHIETTENT v2.0</h1>
+        <p>Elimineer de passieve vorm. Schrijf actief.</p>
+        <input type="text" id="speler-naam" placeholder="Naam / Dienstnummer" style="padding:15px; width:300px;"><br><br>
+        <button onclick="startGame()" style="padding:15px 50px; background:var(--pol); color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">START SESSIE</button>
     </div>
 </div>
 
 <div id="input-overlay">
-    <p>Maak de zin actief (ik-vorm, verleden tijd):</p>
-    <div id="target-phrase" style="font-style: italic; margin-bottom: 10px;"></div>
-    <input type="text" id="active-input" placeholder="Typ de actieve zin...">
-    <p style="font-size: 0.8em;">Tip: Gebruik geen 'worden' of 'zijn'!</p>
+    <h3 style="color:var(--gold)">Herschrijf naar ACTIEF</h3>
+    <p id="original-sentence" style="font-style:italic;"></p>
+    <input type="text" id="active-input" placeholder="Typ de actieve ik-vorm...">
+    <p style="font-size: 0.8em; margin-top: 15px; color: #94a3b8;">Voorbeeld: "Ik pakte de verdachte beet."</p>
 </div>
 
 <div class="leaderboard">
-    <strong>TOP 3 RECHERCHEURS:</strong>
-    <ol id="leader-list"></ol>
+    <strong>🏆 TOP RECHERCHEURS</strong>
+    <div id="leader-list"></div>
 </div>
 
+<button class="admin-btn" onclick="exportScores()">EXPORT DATA (CSV)</button>
+
 <script>
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyBOo2LzR1IBnsiBR2SCwPJABtaRv0tpKQ4",
         authDomain: "speeltuin-recherche.firebaseapp.com",
@@ -73,112 +82,124 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const data = [
-        {pas: "De verdachte werd door mij <span class='v-deelwoord'>gezien</span>.", corr: "ik zag de verdachte"},
-        {pas: "Het raam werd door hem <span class='v-deelwoord'>ingeslagen</span>.", corr: "ik zag dat hij het raam insloeg"}, // Uitdagend!
-        {pas: "De achtervolging werd door ons <span class='v-deelwoord'>ingezet</span>.", corr: "ik zette de achtervolging in"},
-        {pas: "Het voertuig werd door mij <span class='v-deelwoord'>gecontroleerd</span>.", corr: "ik controleerde het voertuig"},
-        {pas: "De getuige werd door de agent <span class='v-deelwoord'>gehoord</span>.", corr: "ik hoorde de getuige"},
-        {pas: "De tas werd door de vrouw <span class='v-deelwoord'>meegenomen</span>.", corr: "ik zag dat de vrouw de tas meenam"}
+    // Uitgebreide zinnenlijst (Pittig & Actueel)
+    const casussen = [
+        {pas: "De verdachte werd door mij <span class='v-deelwoord'>geboeid</span>.", corr: "ik boeide de verdachte"},
+        {pas: "Er werd door mij pepperspray <span class='v-deelwoord'>gebruikt</span>.", corr: "ik gebruikte pepperspray"},
+        {pas: "De verdachte werd tegen de grond <span class='v-deelwoord'>gewerkt</span>.", corr: "ik werkte de verdachte tegen de grond"},
+        {pas: "Het voertuig werd door mij tot stilstand <span class='v-deelwoord'>gebracht</span>.", corr: "ik bracht het voertuig tot stilstand"},
+        {pas: "De tas werd ter inbeslagname <span class='v-deelwoord'>overgenomen</span>.", corr: "ik nam de tas in beslag"},
+        {pas: "Het mes werd in de binnenzak <span class='v-deelwoord'>aangetroffen</span>.", corr: "ik trof het mes aan in de binnenzak"},
+        {pas: "De verdachte werd door mij tot medewerking <span class='v-deelwoord'>gesommeerd</span>.", corr: "ik sommeerde de verdachte om mee te werken"},
+        {pas: "De ruit werd door de verdachte <span class='v-deelwoord'>vernield</span>.", corr: "ik zag dat de verdachte de ruit vernielde"}
     ];
 
-    let score = 0;
-    let timeLeft = 60;
-    let gameActive = false;
-    let huidigeOpgave = null;
+    let score = 0, timeLeft = 60, gameActive = false, speedMult = 1;
 
     function startGame() {
-        const naam = document.getElementById('speler-naam').value;
-        if(!naam) return alert("Naam invullen, agent!");
-        document.getElementById('display-naam').innerText = naam;
+        const n = document.getElementById('speler-naam').value;
+        if(!n) return;
+        document.getElementById('display-naam').innerText = n;
         document.getElementById('start-screen').style.display = "none";
         gameActive = true;
         
-        startTimer();
-        spawnTarget();
-    }
-
-    function startTimer() {
-        const t = setInterval(() => {
+        let timerInt = setInterval(() => {
             timeLeft--;
             document.getElementById('timer').innerText = timeLeft;
-            if(timeLeft <= 0) {
-                clearInterval(t);
-                gameActive = false;
-                submitScore();
-            }
+            if(timeLeft <= 0) { clearInterval(timerInt); endGame(); }
         }, 1000);
+
+        spawn();
     }
 
-    function spawnTarget() {
+    function spawn() {
         if(!gameActive) return;
-        const opgave = data[Math.floor(Math.random() * data.length)];
+        const opgave = casussen[Math.floor(Math.random() * casussen.length)];
         const div = document.createElement('div');
-        div.className = 'target-sentence';
+        div.className = 'target';
         div.innerHTML = opgave.pas;
-        div.style.top = Math.random() * 70 + 15 + "%";
-        div.style.left = "-500px";
+        div.style.top = (Math.random() * 60 + 20) + "%";
+        div.style.left = "-600px";
         document.getElementById('game-container').appendChild(div);
 
-        // Beweging
-        let pos = -500;
+        let pos = -600;
+        // Snelheid verhoogt op basis van score
+        let currentSpeed = (3 + (score / 20)) * speedMult; 
+
         const move = setInterval(() => {
-            if(!gameActive) { clearInterval(move); div.remove(); }
-            pos += 3;
+            if(!gameActive) { clearInterval(move); div.remove(); return; }
+            pos += currentSpeed;
             div.style.left = pos + "px";
-            if(pos > window.innerWidth) { clearInterval(move); div.remove(); spawnTarget(); }
+            if(pos > window.innerWidth) { clearInterval(move); div.remove(); spawn(); }
         }, 20);
 
-        // Hit detectie
-        div.querySelector('.v-deelwoord').onclick = (e) => {
-            e.stopPropagation();
+        div.querySelector('.v-deelwoord').onclick = () => {
             clearInterval(move);
-            openHerschrijfMode(opgave, div);
+            showInput(opgave, div);
         };
     }
 
-    function openHerschrijfMode(opgave, element) {
-        huidigeOpgave = opgave;
-        document.getElementById('target-phrase').innerText = element.innerText;
+    function showInput(opgave, div) {
+        document.getElementById('original-sentence').innerText = div.innerText;
         document.getElementById('input-overlay').style.display = "block";
+        document.getElementById('active-input').value = "";
         document.getElementById('active-input').focus();
-        element.remove();
+        
+        document.getElementById('active-input').onkeypress = (e) => {
+            if(e.key === 'Enter') {
+                const gok = document.getElementById('active-input').value.toLowerCase().trim();
+                // Check of de kern van de actieve zin erin zit
+                if(gok.includes(opgave.corr.split(' ')[1]) && gok.includes("ik")) {
+                    score += 10;
+                    document.getElementById('score').innerText = score;
+                    document.getElementById('input-overlay').style.display = "none";
+                    div.remove();
+                    spawn();
+                } else {
+                    alert("Onvoldoende! Dat is niet de actieve ik-vorm.");
+                }
+            }
+        };
     }
 
-    // Luister naar Enter in het invoerveld
-    document.getElementById('active-input').onkeypress = (e) => {
-        if(e.key === 'Enter') {
-            const gok = document.getElementById('active-input').value.toLowerCase().trim();
-            if(gok === huidigeOpgave.corr || gok.includes(huidigeOpgave.corr.split(' ')[1])) { // Iets soepeler op de actieve vorm
-                score += 10;
-                document.getElementById('score').innerText = score;
-                document.getElementById('input-overlay').style.display = "none";
-                document.getElementById('active-input').value = "";
-                spawnTarget();
-            } else {
-                alert("FOUT! Dat is niet actief. Gebruik de ik-vorm in de verleden tijd.");
-            }
-        }
-    };
-
-    function submitScore() {
+    function endGame() {
+        gameActive = false;
         const naam = document.getElementById('display-naam').innerText;
-        db.ref('leaderboard').push({ naam, score });
-        alert("MISSIE VOLTOOID! Je score: " + score);
+        db.ref('leaderboard_v2').push({ naam, score, datum: new Date().toLocaleDateString() });
+        alert("FINISH! Je score: " + score);
         location.reload();
     }
 
-    // Update Leaderboard
-    db.ref('leaderboard').orderByChild('score').limitToLast(3).on('value', snap => {
+    // Leaderboard v2
+    db.ref('leaderboard_v2').orderByChild('score').limitToLast(5).on('value', snap => {
         const list = document.getElementById('leader-list');
         list.innerHTML = "";
-        let scores = [];
-        snap.forEach(s => { scores.push(s.val()); });
-        scores.reverse().forEach(s => {
-            list.innerHTML += `<li>${s.naam}: ${s.score}</li>`;
+        let entries = [];
+        snap.forEach(s => entries.push(s.val()));
+        entries.reverse().forEach((e, i) => {
+            list.innerHTML += `<div>#${i+1} ${e.naam} - ${e.score}</div>`;
         });
     });
-</script>
 
+    // DOCENT TOOL: Export naar CSV
+    function exportScores() {
+        db.ref('leaderboard_v2').once('value', snap => {
+            let csv = "Naam,Score,Datum\n";
+            snap.forEach(s => {
+                const d = s.val();
+                csv += `${d.naam},${d.score},${d.datum}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'resultaten_taal_schiettent.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    }
+</script>
 </body>
 </html>
